@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -72,13 +73,13 @@ namespace ProjekatDotnet
                 if (Cache.Contains(key))
                 {
                     Console.WriteLine("From Cache!");
-                    print(Cache.ReadFromCache(key));
+                    print(context, Cache.ReadFromCache(key));
                 }
                 else
                 {
                     List<WeatherResponse> response = WeatherApiService.getWeather(geoCode);
                     Cache.WriteToCache(key, response);
-                    print(response);
+                    print(context, response);
                 }
             }
             catch (Exception e)
@@ -86,7 +87,7 @@ namespace ProjekatDotnet
                 Console.WriteLine(e.Message);
             }
         }
-        private static void print(List<WeatherResponse> data)
+        private static void print(HttpListenerContext context, List<WeatherResponse> data)
         {
 
             foreach (var weather in data)
@@ -99,6 +100,14 @@ namespace ProjekatDotnet
                 Console.WriteLine();
 
             }
+
+            var json = JsonConvert.SerializeObject(data);
+            var buffer = Encoding.UTF8.GetBytes(json);
+            context.Response.ContentType = "application/json";
+            context.Response.ContentLength64 = buffer.Length;
+            var output = context.Response.OutputStream;
+            output.Write(buffer, 0, buffer.Length);
+            output.Close();
 
             Console.WriteLine("\n");
 
